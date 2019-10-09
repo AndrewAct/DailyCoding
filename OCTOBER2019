@@ -1,0 +1,290 @@
+#The following contents are published for learning.
+#Happy coding!
+#Daily Coding Problem 
+#9/25/2019
+#Build a Cartisen Tree
+#The equence offered is [3,2,6,1,9]
+
+class Node:
+    def __init__(self, data, left=None, right=None):
+        self.data = data
+        self.left = left
+        self.right = right
+
+def build_tree(seq):
+    if not seq:
+        return None
+
+    val = min(seq)
+    root, i = Node(val), seq.index(val)
+
+    root.left = build_tree(seq[:i])
+    root.right = build_tree(seq[i + 1:])
+
+    return root
+
+def helper(root, seq, left, right):
+    if root is None:
+        return
+
+    node = Node(seq[root])
+    node.left = helper(left[root], seq, left, right)
+    node.right = helper(right[root], seq, left, right)
+
+    return node
+
+def build_tree(seq):
+    n = len(seq)
+    parent, left, right = [None] * n, [None] * n, [None] * n
+
+    root = 0
+    for i in range(1, n):
+        prev = i - 1
+
+        while seq[i] < seq[prev] and prev != root:
+            prev = parent[prev]
+
+        if seq[i] < seq[prev]:
+            left[i] = root
+            parent[root] = i
+            root = i
+
+        else:
+            if right[prev] is not None:
+                parent[right[prev]] = i
+                left[i] = right[prev]
+
+            parent[i] = prev
+            right[prev] = i
+
+    return helper(root, seq, left, right)
+
+
+#9/27/2019
+#EIO Rating system
+class Elo:
+    def __init__(self, k=32, n=400, d=1000):
+        self.ratings = {}
+        self.k = k 
+        self.n = n
+        self.default = d
+
+    def add_player(self, name):
+        self.ratings[name] = self.default
+
+    def expected(self, r1, r2):
+        return 1 / (1 + 10 ** ((r2 - r1) / self.n))
+
+    def update(self, p1, p2, outcome):
+        e1 = self.expected(self.ratings[p1], self.ratings[p2])
+        e2 = self.expected(self.ratings[p2], self.ratings[p1])
+
+        o1, o2 = 1 - outcome, outcome
+
+        self.ratings[p1] += self.k * (o1 - e1)
+        self.ratings[p2] += self.k * (o2 - e2)
+
+#9/29/2019
+
+#Problem Description:
+#A Boolean formula can be said to be satisfiable if there is a way to assign truth values to each variable
+#Such that the entire formula evaluates to true.
+
+#For example, suppose we have the following formula, where the symbol ¬ is used to denote negation:
+#(¬c OR b) AND (b OR c) AND (¬b OR c) AND (¬c OR ¬a)
+#One way to satisfy this formula would be to let a = False, b = True, and c = True.
+#This type of formula, with AND statements joining tuples containing exactly one OR, is known as 2-CNF.
+#Given a 2-CNF formula, find a way to assign truth values to satisfy it, or return False if this is impossible
+
+def dfs1(node, graph, visited, order):
+    visited.add(node)
+
+    for next_node in graph.get(node, []):
+        if next_node not in visited:
+            dfs1(next_node, graph, visited, order)
+
+    order.append(node)
+
+def toposort(graph):
+    order = [] 
+    visited = set()
+
+    for node in graph: 
+        if node not in visited: 
+            dfs1(node, graph, visited, order) 
+
+    return reversed(order)
+
+def get_transpose(graph):
+    transpose = defaultdict(list)
+
+    for key, values in graph.items():
+        for v in values:
+            transpose[v].append(key)
+
+    return transpose
+
+def dfs2(node, graph, visited, components, i):
+    visited.add(node)
+
+    components[node] = i
+
+    for next_node in graph.get(node, []):
+        if next_node not in components:
+            dfs2(next_node, graph, visited, components, i)
+
+def get_connected_components(graph, order): 
+    transpose = get_transpose(graph)
+    visited = set()
+    components = defaultdict(list)
+    i = -1
+
+    for i, node in enumerate(reversed(order)):
+        if node not in visited:
+            dfs2(node, transpose, visited, components, i)
+
+    return components
+For our graph, this would return the following result: {'a'
+
+def negate(x):
+    if x[0] == '¬':
+        return x[1:]
+    else:
+        return '¬' + x
+
+def satisfy(variables, *args):
+    graph = defaultdict(list)
+
+    for a, b in args:
+        graph[negate(a)].append(b)
+        graph[negate(b)].append(a)
+
+    order = toposort(dict(graph))
+    transpose = get_transpose(graph)
+    components = get_connected_components(transpose, order)
+
+    if any(components[v] == components[negate(v)] for v in variables):
+        return False
+    else:
+        return set([max(v, negate(v), key=lambda x: components[x]) for v in variables])
+
+#10/2/2019
+#Given integers M and N, write a program 
+#counts how many positive integer pairs (a, b) satisfy the following conditions:
+#a + b = M 
+#a XOR b = N
+#Code 
+def num_flips(string):
+    flips = [[0 for _ in range(2)] for _ in range(len(string))]
+
+    for i, char in enumerate(string):
+        if char == 'x':
+            flips[i][0] = flips[i - 1][0]
+            flips[i][1] = min(flips[i - 1]) + 1
+        else:
+            flips[i][0] = flips[i - 1][0] + 1
+            flips[i][1] = min(flips[i - 1])
+
+    return min(flips[-1])
+
+def num_flips(string):
+    n = len(string)
+    y_left = [0] * n
+    x_right = [0] * n
+
+    l, r = 0, 0
+    for i in range(n):
+        y_left[i] = l
+        if string[i] == 'y':
+            l += 1
+
+    for i in range(n - 1, -1, -1):
+        x_right[i] = r
+        if string[i] == 'x':
+            r += 1
+
+    return min(sum(pair) for pair in zip(y_left, x_right))
+
+#10/5/2019
+#A question asked by Amazon
+
+#Consider the following scenario: 
+#There are N mice and N holes placed at integer points along a line. 
+#Given this, find a method that maps mice to holes 
+#Such that the largest number of steps any mouse takes is minimized.
+#Each move consists of moving one mouse one unit to the left or right, 
+#And only one mouse can fit inside each hole.
+#For example, suppose the mice are positioned at [1, 4, 9, 15], 
+#And the holes are located at [10, -5, 0, 16]. 
+#In this case, the best pairing would require us to send the mouse at 1 to the hole at -5, 
+#So our function should return 6.
+
+#Solution
+from itertools import permutations
+
+def send(mice, holes):
+    moves = float('inf')
+
+    orders = permutations(holes, len(mice))
+    for order in orders:
+        max_steps = 0
+        for mouse, hole in zip(mice, order):
+            max_steps = max(max_steps, abs(mouse - hole))
+        moves = min(moves, max_steps)
+
+    return moves
+
+def send(mice, holes):
+    mice.sort()
+    holes.sort()
+
+    moves = 0
+    for i in range(len(mice)):
+        moves = max(moves, abs(mice[i] - holes[i]))
+
+    return moves
+
+#10/8/2019
+Write a program to determine how many distinct ways there are 
+#To create a max heap from a list of N given integers.
+
+#We can first calculate the height of the tree up to the last complete row, 
+#Which will be the largest power of two not exceeding N. 
+#Next, the number of leftover nodes on the bottom row can be obtained by subtracting the number of nodes 
+#in a complete tree with the above height from N. 
+#Here, this value will be three as well. 
+#It will either be the case that all the leftover nodes will be contained in the left subtree, 
+#Or we will hit a limit of 2height - 1
+
+#Combining the left side nodes from the complete tree without the last level, 
+#And the bottom nodes that belong to the left tree, 
+#We come to the formula L = 2height - 1- 1 + min(2height - 1, bottom)
+
+from math import log
+
+def get_factorials(n):
+    factorials = {0: 1}
+
+    for i in range(1, n + 1):
+        factorials[i] = i * factorials[i - 1]
+
+    return factorials
+
+def choose(factorials, n, k):
+    return factorials[n] // factorials[n - k] // factorials[k]
+
+def ways(n, f):
+    if n <= 2:
+        return 1
+
+    height = int(log(n)) + 1
+    bottom = n - (2 ** height - 1)
+
+    left = 2 ** (height - 1) - 1 + min(2 ** (height - 1), bottom)
+    right = n - left - 1
+
+    return choose(f, n - 1, left) * ways(left, f) * ways(right, f)
+
+def num_heaps(n):
+    factorials = get_factorials(n)
+    return ways(n, factorials)
